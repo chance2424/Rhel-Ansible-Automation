@@ -117,7 +117,7 @@ Each of these roles operates independently, allowing targeted re-runs (for examp
 📁 Actual Project Structure
 
 
-        ![29e918cd-9e9d-4f69-ab65-bdb5370850e3](https://github.com/user-attachments/assets/569c7fa5-1e3c-48bb-8cea-5e88e91642bd)
+        
     
 
 🔁 Execution Logic
