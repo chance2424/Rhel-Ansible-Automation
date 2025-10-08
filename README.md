@@ -44,7 +44,7 @@ Applies or updates **version locks** for `podman` to ensure compliance with appr
 
 ---
 
-### 🧾 4. elk_rotated_log_cleanup.yml
+### 🧾 4. `elk_rotated_log_cleanup.yml`
 
 Purpose:
 Automates the cleanup of rotated system logs and Falcon sensor logs on ELK or RHEL servers. Designed to safely identify and remove old log copies, it includes a dry-run mode by default to preview deletions before performing any actual cleanup.
