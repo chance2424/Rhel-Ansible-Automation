@@ -1,0 +1,42 @@
+---
+- name: Lock Podman and update other packages (RHEL 9 only)
+  hosts: all
+  become: yes
+  gather_facts: true
+
+  tasks:
+    - name: Skip if not RHEL 9
+      ansible.builtin.debug:
+        msg: "Skipping host - not RHEL 9"
+      when: ansible_distribution_major_version != '9'
+
+    - name: Ensure versionlock plugin is installed
+      ansible.builtin.package:
+        name: dnf-plugins-core
+        state: present
+      when: ansible_distribution_major_version == '9'
+
+    - name: Lock Podman to version 5.4.0-9
+      ansible.builtin.command: dnf versionlock add podman-5.4.0-9
+      args:
+        warn: false
+      register: podman_lock
+      changed_when: "'Adding versionlock' in podman_lock.stdout"
+      when: ansible_distribution_major_version == '9'
+
+    - name: Update all packages excluding Podman
+      ansible.builtin.command: dnf -y update --exclude=podman*
+      register: update_result
+      changed_when: "'Upgraded:' in update_result.stdout"
+      when: ansible_distribution_major_version == '9'
+
+    - name: Show current versionlock list
+      ansible.builtin.command: dnf versionlock list
+      register: lock_list
+      changed_when: false
+      when: ansible_distribution_major_version == '9'
+
+    - name: Display locked packages
+      ansible.builtin.debug:
+        msg: "{{ lock_list.stdout_lines }}"
+      when: ansible_distribution_major_version == '9'
