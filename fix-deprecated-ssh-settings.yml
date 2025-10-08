@@ -1,0 +1,89 @@
+---
+- name: Fix Deprecated SSH Cryptographic Settings (RHEL 8/9)
+  hosts: all
+  become: true
+  gather_facts: false
+
+  vars:
+    ssh_ciphers: "aes128-ctr,aes256-ctr,aes128-gcm@openssh.com,aes256-gcm@openssh.com,chacha20-poly1305@openssh.com"
+    ssh_kex: "curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,diffie-hellman-group14-sha256"
+    ssh_macs: "hmac-sha2-512,hmac-sha2-256"
+
+  pre_tasks:
+    - name: Collect minimal facts (OS family & major version)
+      ansible.builtin.setup:
+        gather_subset:
+          - os_family
+          - distribution_major_version
+
+    - name: Abort if not Red Hat family
+      ansible.builtin.fail:
+        msg: "This playbook only supports Red Hat family systems."
+      when: ansible_os_family != "RedHat"
+
+    - name: End host for unsupported RHEL versions
+      ansible.builtin.meta: end_host
+      when: ansible_distribution_major_version not in ['8', '9']
+
+    - name: Check if sshd_config is immutable
+      ansible.builtin.stat:
+        path: /etc/ssh/sshd_config
+        get_attributes: true
+      register: sshd_config_stat
+
+    - name: Remember if immutable was set
+      ansible.builtin.set_fact:
+        sshd_immutable_was_set: "{{ 'i' in (sshd_config_stat.stat.attr_flags | default('')) }}"
+
+    - name: Remove immutable bit from sshd_config if set
+      ansible.builtin.file:
+        path: /etc/ssh/sshd_config
+        attributes: '-i'
+      when: sshd_immutable_was_set
+
+  tasks:
+    - name: Set secure Ciphers
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regex: '^\\s*Ciphers\\b'
+        line: "Ciphers {{ ssh_ciphers }}"
+        create: yes
+        state: present
+        backup: yes
+        validate: 'sshd -t -f %s'
+      notify: Reload sshd
+
+    - name: Set secure KexAlgorithms
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regex: '^\\s*KexAlgorithms\\b'
+        line: "KexAlgorithms {{ ssh_kex }}"
+        create: yes
+        state: present
+        backup: yes
+        validate: 'sshd -t -f %s'
+      notify: Reload sshd
+
+    - name: Set secure MACs
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regex: '^\\s*MACs\\b'
+        line: "MACs {{ ssh_macs }}"
+        create: yes
+        state: present
+        backup: yes
+        validate: 'sshd -t -f %s'
+      notify: Reload sshd
+
+  post_tasks:
+    - name: Re-apply immutable bit if it was previously set
+      ansible.builtin.file:
+        path: /etc/ssh/sshd_config
+        attributes: '+i'
+      when: sshd_immutable_was_set
+
+  handlers:
+    - name: Reload sshd
+      ansible.builtin.service:
+        name: sshd
+        state: reloaded
