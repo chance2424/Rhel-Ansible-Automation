@@ -1,5 +1,7 @@
-# Rhel-Ansible-Automation
-Enterprise-style Ansible playbooks for automating RHEL 8/9 patching, registration, and validation.
+# RHEL Ansible Automation
+
+This repository contains a collection of Ansible playbooks and roles used to automate Red Hat Enterprise Linux (RHEL) operations such as patching, SSH hardening, Satellite registration, and service validation.
+All examples are sanitized — no real hostnames, credentials, or IPs are included.
 
 Fix Deprecated SSH Cryptographic Settings (RHEL 8/9)
 Updates Ciphers, KexAlgorithms, and MACs in /etc/ssh/sshd_config to secure defaults.
