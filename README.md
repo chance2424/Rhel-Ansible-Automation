@@ -115,39 +115,10 @@ validate_publisher	Ensures AEM Publisher nodes are healthy post-patch	- Sends HT
 Each of these roles operates independently, allowing targeted re-runs (for example, validating Dispatchers without repeating patching) while maintaining a consistent orchestration model.
 
 📁 Actual Project Structure
-aem-ops/
-├── ansible.cfg
-├── group_vars/
-│   └── all.yml
-├── inventories/
-│   └── aem.ini
-├── playbooks/
-│   └── aem_master.yml
-└── roles/
-    ├── patch_reboot/
-    │   ├── defaults/
-    │   │   └── main.yml
-    │   └── tasks/
-    │       └── main.yml
-    ├── start_aem/
-    │   └── tasks/
-    │       └── main.yml
-    ├── stop_aem/
-    │   └── tasks/
-    │       └── main.yml
-    ├── validate_dispatcher/
-    │   ├── defaults/
-    │   │   └── main.yml
-    │   ├── handlers/
-    │   │   └── main.yml
-    │   └── tasks/
-    │       └── main.yml
-    └── validate_publisher/
-        ├── defaults/
-        │   └── main.yml
-        └── tasks/
-            └── main.yml
-            
+
+
+        ![29e918cd-9e9d-4f69-ab65-bdb5370850e3](https://github.com/user-attachments/assets/569c7fa5-1e3c-48bb-8cea-5e88e91642bd)
+    
 
 🔁 Execution Logic
 
