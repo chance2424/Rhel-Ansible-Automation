@@ -41,7 +41,7 @@ Automates **re-registration of RHEL systems** with the correct Red Hat Satellite
 Applies or updates **version locks** for `podman` to ensure compliance with approved versions.
 
 **Key Features:**
-- Ensures `yum-plugin-versionlock` is installed  
+- Ensures `dnf-plugin-versionlock` is installed  
 - Locks to the correct version specified in group variables  
 - Fully idempotent and safe for repeat runs  
 
