@@ -69,7 +69,7 @@ Ideal for environments where storage retention must be tightly managed or where 
 ### 🪩 5. `logstash-versionlock.yml`
 
 **Purpose:**  
-Locks **Logstash** to a specific version (`8.19.3` in this case) on RHEL 9 systems to maintain environment stability and patch consistency.  
+Locks **Logstash** to a specific version on RHEL 9 systems to maintain environment stability and patch consistency.  
 
 **Key Features:**
 - Skips non–RHEL 9 hosts gracefully  
