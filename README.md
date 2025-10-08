@@ -141,14 +141,4 @@ The **`aem_master.yml`** orchestrates the entire patching workflow:
 
 ---
 
-## 🧠 Tools & Technologies
-
-- **Red Hat Enterprise Linux 8/9**
-- **Ansible Automation Platform**
-- **YAML
-- **Systemctl / SSH / DNF**
-- **Bash for command automation**
-- **Python for supplemental scripts**
-
----
 
