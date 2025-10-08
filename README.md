@@ -111,7 +111,7 @@ Each role can be executed independently, allowing flexibility to re-run validati
 
 #### 📁 Project Structure
 
-For the actual directory layout, see the image below (or refer to `/images/aem_structure.png`):
+For the actual directory layout, see the image below (or refer to `Aem Playbook Structure.png`):
 
 <p align="center">
   <img src="images/aem_structure.png" width="500" alt="AEM Role-Based Playbook Structure">
