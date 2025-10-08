@@ -126,7 +126,7 @@ The **`aem_master.yml`** orchestrates the entire patching workflow:
 ```yaml
 ---
 # Run with:
-#   ansible-playbook -i inventories/aem.ini playbooks/aem_master.yml
+# ansible-playbook -i inventories/aem.ini playbooks/aem_master.yml
 # Tags: stop, patch, reboot, start, publisher, dispatcher
  
 - name: Stop AEM servers
