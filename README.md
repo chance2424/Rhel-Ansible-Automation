@@ -139,6 +139,3 @@ The **`aem_master.yml`** orchestrates the entire patching workflow:
     - validate_publisher
 
 
----
-
-
