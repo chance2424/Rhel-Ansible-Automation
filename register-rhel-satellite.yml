@@ -1,0 +1,120 @@
+---
+# Title: register-rhel-satellite.yml
+# Purpose: Register RHEL 8/9 hosts to Red Hat Satellite using an Activation Key,
+#          optionally enable specific repositories, set a release, and register with Insights.
+# Notes:
+#   - Requires the Ansible collection: community.general
+#     Install on the control node with: ansible-galaxy collection install community.general
+#   - All values are placeholders; define real values in group_vars or via -e.
+#   - Designed to be idempotent and safe to re-run.
+
+- name: Register RHEL hosts to Red Hat Satellite
+  hosts: all
+  become: true
+  gather_facts: false
+
+  vars:
+    # -----------------------------
+    # Satellite / RHSM Parameters
+    # -----------------------------
+    satellite_fqdn: "satellite.example.com"      # e.g., sat01.corp.example.com
+    rhsm_org: "YOUR_ORG_ID"                      # Organization ID in Satellite
+    rhsm_activation_key: "YOUR_ACTIVATION_KEY"   # Activation Key (no secrets committed!)
+    force_reregister: false                      # Set true to force re-registration
+    server_insecure: false                       # true only if your lab uses self-signed certs
+
+    # -----------------------------
+    # Optional Post-Registration
+    # -----------------------------
+    enable_repos: []  # Example: ['rhel-8-for-x86_64-baseos-rpms', 'rhel-8-for-x86_64-appstream-rpms']
+    set_release: ""   # Example: '8.8' or '9.3' (leave blank to skip)
+    register_insights: true
+
+  pre_tasks:
+    - name: Collect minimal facts (OS family & major version)
+      ansible.builtin.setup:
+        gather_subset:
+          - os_family
+          - distribution_major_version
+
+    - name: Abort if not Red Hat family
+      ansible.builtin.fail:
+        msg: "This playbook only supports Red Hat family systems."
+      when: ansible_os_family != "RedHat"
+
+    - name: Abort if missing required vars
+      ansible.builtin.assert:
+        that:
+          - satellite_fqdn | length > 0
+          - rhsm_org | length > 0
+          - rhsm_activation_key | length > 0
+        fail_msg: "Required vars missing: satellite_fqdn, rhsm_org, rhsm_activation_key."
+
+  tasks:
+    - name: Ensure community.general collection is available (control node hint)
+      ansible.builtin.debug:
+        msg: "Requires 'community.general' collection. Install with: ansible-galaxy collection install community.general"
+
+    - name: Configure RHSM/Satellite server hostname (rhsm.conf)
+      community.general.redhat_subscription:
+        state: present
+        org_id: "{{ rhsm_org }}"
+        activationkey: "{{ rhsm_activation_key }}"
+        server_hostname: "{{ satellite_fqdn }}"
+        server_insecure: "{{ server_insecure | bool }}"
+        force_register: "{{ force_reregister | bool }}"
+      register: rhsm_reg
+
+    - name: Show registration result
+      ansible.builtin.debug:
+        var: rhsm_reg
+      when: rhsm_reg is defined
+
+    - name: Refresh RHSM entitlements & metadata
+      ansible.builtin.command: subscription-manager refresh
+      changed_when: "'Content access has been refreshed' in (rhsm_refresh.stdout | default(''))"
+      register: rhsm_refresh
+
+    - name: Optionally set release version (pin to a specific minor)
+      ansible.builtin.command: "subscription-manager release --set={{ set_release }}"
+      when: set_release is defined and set_release | length > 0
+      register: set_release_cmd
+      changed_when: set_release_cmd.rc == 0
+
+    - name: Optionally enable specific repositories
+      community.general.rhsm_repository:
+        name: "{{ item }}"
+        state: enabled
+      loop: "{{ enable_repos }}"
+      when: enable_repos | length > 0
+
+    - name: Clean and rebuild local DNF metadata (post-registration)
+      ansible.builtin.command: dnf clean all
+      changed_when: false
+
+    - name: Make sure the system can see content (simple sanity check)
+      ansible.builtin.command: dnf repolist
+      register: repolist
+      changed_when: false
+
+    - name: Show enabled repositories
+      ansible.builtin.debug:
+        var: repolist.stdout_lines
+
+    - name: Optionally register with Red Hat Insights
+      ansible.builtin.command: insights-client --register
+      register: insights_reg
+      changed_when: "'Successfully registered' in (insights_reg.stdout | default(''))"
+      when: register_insights | bool
+
+  post_tasks:
+    - name: Summary
+      ansible.builtin.debug:
+        msg:
+          - "Satellite: {{ satellite_fqdn }}"
+          - "Org: {{ rhsm_org }}"
+          - "Activation Key: {{ rhsm_activation_key | regex_replace('.','*') }}"
+          - "Force re-register: {{ force_reregister }}"
+          - "Set release: {{ set_release | default('') | ternary(set_release, 'not set') }}"
+          - "Repos enabled: {{ (enable_repos | length > 0) | ternary(enable_repos, 'none') }}"
+          - "Insights: {{ register_insights | bool | ternary('registered/attempted','skipped') }}"
