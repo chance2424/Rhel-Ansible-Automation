@@ -1,0 +1,72 @@
+---
+- name: Cleanup rotated messages & Falcon logs (copies only)
+  hosts: elk   # or 'all' if you prefer
+  gather_facts: false
+  become: true
+
+  vars:
+    retention_days: 0
+    perform_delete: false   # default is DRY RUN. Run with -e perform_delete=true to actually delete.
+
+    log_targets:
+      - path: /var/log
+        patterns:
+          - "messages-[0-9]*"
+          - "messages-*.gz"
+          - "falcon-sensor.log-[0-9]*"
+          - "falcon-sensor.log-*.gz"
+      - path: /var/log/falcon-sensor
+        patterns:
+          - "falcon-sensor.log-[0-9]*"
+          - "falcon-sensor.log-*.gz"
+
+  tasks:
+    - name: Ensure Falcon log dir exists
+      file:
+        path: /var/log/falcon-sensor
+        state: directory
+        mode: "0755"
+
+    - name: Find rotated copies older than {{ retention_days }} days
+      ansible.builtin.find:
+        paths: "{{ item.path }}"
+        patterns: "{{ item.patterns }}"
+        age: "{{ retention_days }}d"
+        file_type: file
+        recurse: false
+      register: _found
+      loop: "{{ log_targets }}"
+      loop_control:
+        label: "{{ item.path }}"
+      failed_when: false
+
+    - name: Flatten found file list
+      vars:
+        all_lists: "{{ _found.results | map(attribute='files') | list }}"
+      set_fact:
+        files_to_consider: "{{ all_lists | default([]) | flatten(levels=1) | list }}"
+
+    - name: DRY-RUN summary
+      debug:
+        msg:
+          - "Host: {{ inventory_hostname }}"
+          - "Retention (days): {{ retention_days }}"
+          - "Total rotated copies found: {{ files_to_consider | length }}"
+          - "{{ files_to_consider | map(attribute='path') | list }}"
+      when: not perform_delete
+
+    - name: Delete rotated copies (REAL RUN)
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ files_to_consider | default([]) }}"
+      loop_control:
+        label: "{{ item.path }}"
+      when: perform_delete
+      register: _deleted
+
+    - name: Deletion summary
+      debug:
+        msg:
+          - "Deleted {{ _deleted.results | selectattr('changed') | list | length }} file(s)."
+      when: perform_delete
