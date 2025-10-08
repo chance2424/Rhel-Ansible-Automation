@@ -114,11 +114,7 @@ validate_publisher	Ensures AEM Publisher nodes are healthy post-patch	- Sends HT
 
 Each of these roles operates independently, allowing targeted re-runs (for example, validating Dispatchers without repeating patching) while maintaining a consistent orchestration model.
 
-📁 Actual Project Structure
-
-
-        
-    
+📁 For Actual Project Structure please refer to the images section
 
 🔁 Execution Logic
 
@@ -183,7 +179,6 @@ This structure ensures full automation coverage while allowing flexibility to ru
 | `roles/` | Modular roles for patching, validation, and service control |
 | `group_vars/` | Environment-specific variables (e.g., Vegas, Dallas) |
 | `inventories/` | Example inventory files for prod/non-prod |
-| `docs/` | Reference material (AEM flow diagrams, patching logic, etc.) |
 
 ---
 
