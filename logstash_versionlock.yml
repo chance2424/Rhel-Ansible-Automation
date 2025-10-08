@@ -1,0 +1,39 @@
+- name: Lock Logstash on RHEL 9
+  hosts: all
+  become: yes
+  gather_facts: true
+
+  tasks:
+    - name: Skip if not RHEL 9
+      debug:
+        msg: "Skipping host - not RHEL 9"
+      when: ansible_distribution_major_version != '9'
+
+    - name: Ensure versionlock plugin is present
+      ansible.builtin.package:
+        name: dnf-plugins-core
+        state: present
+      when: ansible_distribution_major_version == '9'
+
+    - name: Lock Logstash to version 8.19.3
+      community.general.dnf_versionlock:
+        state: present
+        name: "logstash-8.19.3*"
+      when: ansible_distribution_major_version == '9'
+
+    - name: Update all packages (Logstash capped by versionlock)
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+      when: ansible_distribution_major_version == '9'
+
+    - name: Show versionlock list
+      ansible.builtin.command: dnf versionlock list
+      register: lock_list
+      changed_when: false
+      when: ansible_distribution_major_version == '9'
+
+    - name: Display locked packages
+      debug:
+        var: lock_list.stdout_lines
+      when: ansible_distribution_major_version == '9'
