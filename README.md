@@ -38,12 +38,13 @@ Automates **re-registration of RHEL systems** with the correct Red Hat Satellite
 ### 🔒 3. `podman-versionlock.yml`
 
 **Purpose:**  
-Applies or updates **version locks** for `podman` to ensure compliance with approved versions.
+Applies or updates **version locks** for `podman` while updating all other packages
 
 **Key Features:**
 - Ensures `dnf-plugin-versionlock` is installed  
 - Locks to the correct version specified in group variables  
-- Fully idempotent and safe for repeat runs  
+- Fully idempotent and safe for repeat runs
+- updates all other packages excluding podman
 
 ---
 
