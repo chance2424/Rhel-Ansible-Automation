@@ -124,18 +124,49 @@ For the actual directory layout, see the image below (or refer to `/images/aem_s
 The **`aem_master.yml`** orchestrates the entire patching workflow:
 
 ```yaml
-- name: Full AEM Patching Workflow
-  hosts: all
-  become: yes
+---
+# Run with:
+#   ansible-playbook -i inventories/aem.ini playbooks/aem_master.yml
+# Tags: stop, patch, reboot, start, publisher, dispatcher
+ 
+- name: Stop AEM servers
+  hosts: aut:pub:dis
+  gather_facts: false
   serial: 1
-  any_errors_fatal: false
   max_fail_percentage: 100
-
   roles:
-    - stop_aem
-    - patch_reboot
-    - start_aem
-    - validate_dispatcher
-    - validate_publisher
+    - { role: stop_aem, tags: ["stop"] }
+ 
+- name: Patch and reboot servers
+  hosts: aut:pub:dis
+  gather_facts: true
+  serial: 1
+  max_fail_percentage: 100
+  roles:
+    - { role: patch_reboot, tags: ["patch","reboot"] }
+ 
+- name: Start AEM servers
+  hosts: aut:pub:dis
+  gather_facts: true
+  serial: 1
+  max_fail_percentage: 100
+  roles:
+    - { role: start_aem, tags: ["start"] }
+ 
+- name: Validate AEM Publisher
+  hosts: pub
+  gather_facts: false
+  serial: 1
+  max_fail_percentage: 100
+  roles:
+    - { role: validate_publisher, tags: ["publisher"] }
+ 
+- name: Validate AEM Dispatcher
+  hosts: dis
+  gather_facts: false
+  serial: 1
+  max_fail_percentage: 100
+  roles:
+    - { role: validate_dispatcher, tags: ["dispatcher"] }
 
 
