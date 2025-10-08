@@ -1,27 +1,29 @@
 # 🧠 RHEL Ansible Automation Portfolio
 
-This repository contains a collection of **enterprise-grade Ansible playbooks** I’ve written to automate and maintain **Red Hat Enterprise Linux (RHEL 8/9)** systems across multiple environments (Vegas & Dallas clusters).  
+This repository contains a collection of **enterprise-grade Ansible playbooks** I’ve written to automate and maintain **Red Hat Enterprise Linux (RHEL 8/9)** systems across multiple environments (Las Vegas & Dallas clusters).  
 All playbooks have been sanitized — no internal hostnames, credentials, or company-specific details are included.
 
-These automations were originally designed to **simplify repetitive sysadmin tasks, enforce configuration compliance, and minimize human error** in patching, validation, and service management processes.
+These automations were designed to **simplify repetitive sysadmin tasks, enforce configuration compliance, and minimize human error** in patching, validation, and service management processes.
 
 ---
 
 ## ⚙️ Playbooks Overview
 
 ### 🩵 1. `fix-deprecated-ssh-settings.yml`
+
 **Purpose:**  
 Updates cryptographic settings in `/etc/ssh/sshd_config` to remove deprecated ciphers, key exchange algorithms, and MACs.  
 Also handles immutable file attributes and safely reloads `sshd` only after syntax validation.
 
 **Key Features:**
-- Validates new config with `sshd -t -f %s` before applying  
+- Validates configuration with `sshd -t -f %s` before applying  
 - Automatically re-applies immutable bit if it was originally set  
-- Enforces modern secure defaults for SSH hardening
+- Enforces modern secure defaults for SSH hardening  
 
 ---
 
 ### 🛰️ 2. `register-rhel-satellite.yml`
+
 **Purpose:**  
 Automates **re-registration of RHEL systems** with the correct Red Hat Satellite activation keys and environments.
 
@@ -34,6 +36,7 @@ Automates **re-registration of RHEL systems** with the correct Red Hat Satellite
 ---
 
 ### 🔒 3. `podman-versionlock.yml`
+
 **Purpose:**  
 Applies or updates **version locks** for `podman` to ensure compliance with approved versions.
 
@@ -46,80 +49,81 @@ Applies or updates **version locks** for `podman` to ensure compliance with appr
 
 ### 🧾 4. `elk_rotated_log_cleanup.yml`
 
-Purpose:
+**Purpose:**  
 Automates the cleanup of rotated system logs and Falcon sensor logs on ELK or RHEL servers. Designed to safely identify and remove old log copies, it includes a dry-run mode by default to preview deletions before performing any actual cleanup.
 
-Key Features:
+**Key Features:**
+- Targets both `/var/log` and `/var/log/falcon-sensor` directories  
+- Detects rotated or compressed log files (e.g. `messages-*`, `falcon-sensor.log-*`)  
+- Supports configurable retention periods via `retention_days`  
+- Defaults to safe mode (`perform_delete: false`) — override with `-e perform_delete=true` to perform deletions  
+- Provides detailed summaries of files found or deleted for auditing  
+- Ensures Falcon log directories exist before scanning  
 
-Targets both /var/log and /var/log/falcon-sensor directories
-
-Detects rotated or compressed log files such as:
-
-messages-*, messages-*.gz
-
-falcon-sensor.log-*, falcon-sensor.log-*.gz
-
-Supports configurable retention periods via retention_days
-
-Defaults to safe mode (perform_delete: false) — can be overridden using -e perform_delete=true for real deletion
-
-Provides a detailed summary of files found or deleted for audit purposes
-
-Ensures the Falcon log directory exists before scanning
-
-Example use case:
-This playbook is ideal for environments where log rotation retention must be managed tightly due to limited storage or compliance requirements. It ensures system stability and reduces manual log maintenance across multiple ELK nodes.
----
+**Use Case:**  
+Ideal for environments where storage retention must be tightly managed or where compliance requires automated log cleanup across multiple ELK nodes.  
 
 ---
+
 ### 🪩 5. `logstash-versionlock.yml`
+
 **Purpose:**  
-Locks **Logstash** to a version of your choice (`8.19.3 in this case`) on RHEL 9 systems to maintain environment stability and patch consistency.  
+Locks **Logstash** to a specific version (`8.19.3` in this case) on RHEL 9 systems to maintain environment stability and patch consistency.  
 
 **Key Features:**
 - Skips non–RHEL 9 hosts gracefully  
 - Installs `dnf-plugins-core` if missing  
 - Uses `community.general.dnf_versionlock` to enforce version lock  
 - Updates all other packages normally while keeping Logstash fixed  
-- Displays versionlock list for verification 
+- Displays versionlock list for verification  
+
 ---
 
-🧩 6. Role-Based Playbook Structure for AEM Automation
+### 🧩 6. Role-Based Playbook Structure for AEM Automation
 
-The Adobe Experience Manager (AEM) patching automation under aem-ops/ is built using a modular, role-based structure designed for clarity, maintainability, and scalability across enterprise environments such as Las Vegas and Dallas.
-Each role focuses on a single, clearly defined function, allowing for efficient troubleshooting, reusability, and safe parallel execution across large server fleets.
+The **Adobe Experience Manager (AEM)** patching automation under `aem-ops/` is built using a **modular, role-based structure** designed for clarity, maintainability, and scalability across enterprise environments such as Las Vegas and Dallas.  
+Each role focuses on a single, clearly defined function, allowing for efficient troubleshooting, reusability, and safe sequential execution across large server fleets.
 
-⚙️ Architectural Overview
+---
 
-This automation framework was designed to replace monolithic patching scripts with a modular, service-aware orchestration model.
-The structure ensures that every major AEM component — Author, Publisher, and Dispatcher — is patched, rebooted, and validated in sequence without disrupting other nodes or clusters.
+#### ⚙️ Architectural Overview
 
-The orchestration logic is defined in the master playbook (aem_master.yml), which calls each role in order, ensuring that every step (stop, patch, start, validate) is executed consistently.
+This automation framework replaces legacy monolithic patching scripts with a **modular, service-aware orchestration model**.  
+It ensures that all major AEM components — Author, Publisher, and Dispatcher — are patched, rebooted, and validated in sequence without disrupting other clusters.
 
-🧱 Roles and Responsibilities
-Role	Purpose	Key Responsibilities
-stop_aem	Prepares the host for patching by stopping all AEM-related processes	- Detects and terminates AEM Java processes
-- Verifies shutdown by checking ports (4502, 4503, 8080)
-- Ensures services are fully stopped before patching
-patch_reboot	Handles RHEL system updates and reboot sequencing	- Applies security and OS updates via dnf
-- Performs controlled reboots
-- Waits for SSH re-connection after reboot
-start_aem	Restarts AEM after reboot	- Starts Java and supporting AEM services
-- Waits for startup to complete and validates service availability
-validate_dispatcher	Performs HTTPS health checks for AEM Dispatcher nodes	- Tests port 443 with Ansible’s uri module
-- Restarts Apache (httpd) automatically on failure
-- Logs validation output for reporting
-validate_publisher	Ensures AEM Publisher nodes are healthy post-patch	- Sends HTTP checks to port 4503
-- Logs reachability and response codes without stopping the playbook
+The orchestration logic is defined in the **master playbook (`aem_master.yml`)**, which calls each role in a controlled sequence.
 
-Each of these roles operates independently, allowing targeted re-runs (for example, validating Dispatchers without repeating patching) while maintaining a consistent orchestration model.
+---
 
-📁 For Actual Project Structure please refer to the images section
+#### 🧱 Roles and Responsibilities
 
-🔁 Execution Logic
+| Role | Purpose | Key Responsibilities |
+|------|----------|----------------------|
+| **stop_aem** | Prepares hosts for patching by stopping AEM processes | Detects and terminates AEM Java processes; validates port shutdown (4502, 4503, 8080) |
+| **patch_reboot** | Handles system updates and reboots | Applies RHEL patches via DNF; performs controlled reboots; waits for SSH reconnect |
+| **start_aem** | Restarts AEM services | Starts Java/AEM components; confirms readiness |
+| **validate_dispatcher** | Validates Dispatcher functionality | Performs HTTPS checks (port 443); restarts Apache on failure; logs results |
+| **validate_publisher** | Validates AEM Publisher nodes | Performs port 4503 checks; logs results; ignores transient failures |
 
-The aem_master.yml playbook orchestrates the full automation pipeline by executing each role in sequence:
+Each role can be executed independently, allowing flexibility to re-run validation steps without redoing patching.
 
+---
+
+#### 📁 Project Structure
+
+For the actual directory layout, see the image below (or refer to `/images/aem_structure.png`):
+
+<p align="center">
+  <img src="images/aem_structure.png" width="500" alt="AEM Role-Based Playbook Structure">
+</p>
+
+---
+
+#### 🔁 Execution Logic
+
+The **`aem_master.yml`** orchestrates the entire patching workflow:
+
+```yaml
 - name: Full AEM Patching Workflow
   hosts: all
   become: yes
@@ -134,51 +138,6 @@ The aem_master.yml playbook orchestrates the full automation pipeline by executi
     - validate_dispatcher
     - validate_publisher
 
-
-Execution highlights:
-
-serial: 1 — ensures one host is processed at a time (safe for production).
-
-max_fail_percentage: 100 — ensures all hosts are attempted even if some fail.
-
-Each task is self-contained with ignore_errors and descriptive logging to prevent partial run failures from halting the pipeline.
-
-🧠 Design Rationale
-
-This modular architecture was developed with enterprise-scale automation in mind. It adheres to industry best practices:
-
-Reliability — Each stage validates its own success or gracefully handles failure.
-
-Reusability — Roles can be called from other playbooks (e.g., staging or prod patching).
-
-Transparency — Structured logs per role make debugging and auditing simple.
-
-Scalability — Easily expandable to add new roles (e.g., backup validation, post-patch reports).
-
-Safety-First Design — Sequential execution minimizes service downtime and ensures controlled rollouts.
-
-🚀 Operational Flow Summary
-
-Stop AEM → Graceful shutdown of all running AEM processes
-
-Patch & Reboot → Apply RHEL 8/9 updates and reboot
-
-Start AEM → Restart and verify AEM components
-
-Validate Dispatcher → Confirm HTTPS (443) and Apache responsiveness
-
-Validate Publisher → Confirm AEM Publisher health (port 4503)
-
-This structure ensures full automation coverage while allowing flexibility to run individual components independently.
-
-## 🧩 Repository Structure
-
-| Folder | Description |
-|--------|--------------|
-| `playbooks/` | Core automation playbooks |
-| `roles/` | Modular roles for patching, validation, and service control |
-| `group_vars/` | Environment-specific variables (e.g., Vegas, Dallas) |
-| `inventories/` | Example inventory files for prod/non-prod |
 
 ---
 
