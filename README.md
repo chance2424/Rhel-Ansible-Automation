@@ -74,7 +74,7 @@ This playbook is ideal for environments where log rotation retention must be man
 ---
 ### 🪩 5. `logstash-versionlock.yml`
 **Purpose:**  
-Locks **Logstash** to an approved version (`8.19.3`) on RHEL 9 systems to maintain environment stability and patch consistency.  
+Locks **Logstash** to a version of your choice (`8.19.3 in this case`) on RHEL 9 systems to maintain environment stability and patch consistency.  
 
 **Key Features:**
 - Skips non–RHEL 9 hosts gracefully  
