@@ -7,9 +7,9 @@ These automations were designed to **simplify repetitive sysadmin tasks, enforce
 
 ---
 
-## ⚙️ Playbooks Overview
+##  Playbooks Overview
 
-###  1. `fix-deprecated-ssh-settings.yml`
+### ⚙️ 1. `fix-deprecated-ssh-settings.yml`
 
 **Purpose:**  
 Updates cryptographic settings in `/etc/ssh/sshd_config` to remove deprecated ciphers, key exchange algorithms, and MACs.  
