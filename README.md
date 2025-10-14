@@ -66,7 +66,7 @@ Ideal for environments where storage retention must be tightly managed or where 
 
 ---
 
-### 🪩 5. `logstash-versionlock.yml`
+### 🔒 5. `logstash-versionlock.yml`
 
 **Purpose:**  
 Locks **Logstash** to a specific version on RHEL 9 systems While updating all other packages.  
