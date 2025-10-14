@@ -1,0 +1,9 @@
+---
+pub_web_port: "4503"
+pub_request_uri: ""
+pub_method: "GET"
+pub_expected_output: "Sign In"
+pub_retry_count: 10
+pub_delay_count: 5
+pub_async_count: 45
+pub_poll_count: 15

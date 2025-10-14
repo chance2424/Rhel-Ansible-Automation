@@ -1,0 +1,107 @@
+---
+- name: Fail on non-RedHat Servers
+  ansible.builtin.fail:
+    msg: This only works on Red Hat Servers.
+  when: ansible_os_family != 'RedHat'
+  ignore_errors: yes
+  tags: [patch]
+
+- name: Fail on RHEL 6 and 7 Servers
+  ansible.builtin.fail:
+    msg: RHEL 6 and 7 servers no longer have updates
+  when: ansible_facts['distribution_major_version'] in ['6','7']
+  ignore_errors: yes
+  tags: [patch]
+
+- name: Upgrade packages via DNF (RHEL8/9)
+  ansible.builtin.dnf:
+    name: "{{ dnf_name }}"
+    state: "{{ dnf_state }}"
+    disablerepo: "{{ dnf_disablerepo }}"
+    enablerepo: "{{ dnf_enablerepo }}"
+    exclude: "{{ dnf_exclude }}"
+  become: yes
+  register: dnfcommandout
+  when: ansible_facts['distribution_major_version'] in ['8', '9']
+  ignore_errors: yes
+  tags: [patch]
+
+- name: Print errors if DNF failed
+  debug:
+    msg: "DNF command produced errors"
+  when: dnfcommandout is not defined
+  ignore_errors: yes
+  tags: [patch]
+
+- name: Show reboot requirement
+  command: needs-restarting -r
+  register: needs_restarting_result
+  ignore_errors: yes
+  tags: [patch, reboot]
+
+- name: Needs Reboot Result Code
+  debug:
+    var: needs_restarting_result.rc
+  tags: [patch, reboot]
+
+- name: Report skipped reboot due to manual flag
+  debug:
+    msg: "Reboot skipped on {{ inventory_hostname }} due to manual override."
+  when: c1b_reboot_manually | bool
+  ignore_errors: yes
+  tags: [reboot]
+
+- name: Reboot server only if it is OK to do so
+  become: yes
+  reboot:
+    connect_timeout: 15
+    post_reboot_delay: 30
+  when:
+    - not (c1b_reboot_manually | bool)
+    - not ansible_check_mode
+  ignore_errors: yes
+  tags: [reboot]
+
+- name: Check for updates (DNF) - normal run
+  ansible.builtin.dnf:
+    list: updates
+    disablerepo: "{{ dnf_disablerepo }}"
+  register: dnfoutput
+  async: 60
+  poll: 0
+  when: not ansible_check_mode
+  ignore_errors: yes
+  tags: [patch]
+
+- name: Check for updates (DNF) - dry run mode
+  ansible.builtin.dnf:
+    list: updates
+    disablerepo: "{{ dnf_disablerepo }}"
+  register: dnfoutput
+  when: ansible_check_mode
+  ignore_errors: yes
+  tags: [patch]
+
+- name: Count and display number of available packages
+  debug:
+    msg: >-
+      Total packages available for update:
+      {{ dnfoutput.results | map(attribute='name') | list | length if dnfoutput.results is defined else 0 }}
+  tags: [patch]
+
+- name: List available updates
+  debug:
+    msg: "{{ dnfoutput.results | map(attribute='name') | list }}"
+  when: dnfoutput.results is defined
+  tags: [patch]
+
+- name: Verify DNF update range
+  ansible.builtin.assert:
+    that:
+      - (dnfoutput.results | map(attribute='name') | list | length) >= (min_packages | int)
+      - (dnfoutput.results | map(attribute='name') | list | length) <= (max_packages | int)
+    fail_msg: "FAIL: system reports needing {{ dnfoutput.results | map(attribute='name') | list | length }}, which is not between {{ min_packages }} and {{ max_packages }}"
+    success_msg: "SUCCESS: system reports needing {{ dnfoutput.results | map(attribute='name') | list | length }}, which is between {{ min_packages }} and {{ max_packages }}"
+  when: dnfoutput.results is defined
+  ignore_errors: yes
+  tags: [patch]

@@ -1,0 +1,15 @@
+---
+- name: Validate Publisher {{ inventory_hostname }}
+  uri:
+    url: "http://{{ inventory_hostname }}:{{ pub_web_port }}/{{ pub_request_uri }}"
+    method: "{{ pub_method }}"
+    validate_certs: false
+    return_content: true
+  register: pub_result
+  failed_when: pub_result.status != 200
+  retries: "{{ pub_retry_count }}"
+  delay: "{{ pub_delay_count }}"
+  async: "{{ pub_async_count }}"
+  poll: "{{ pub_poll_count }}"
+  ignore_errors: yes
+  tags: [publisher]

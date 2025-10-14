@@ -1,0 +1,41 @@
+---
+- name: Skip Dispatcher check if invalid port
+  debug:
+    msg: "❌ Dispatcher check skipped - no valid port provided"
+  when: dis_web_port in ['0', '', 'none']
+  tags: [dispatcher]
+
+- name: Validate Dispatcher {{ inventory_hostname }}
+  uri:
+    url: "{{ dis_web_protocol }}://{{ dis_url_host }}:{{ dis_web_port }}/{{ dis_request_uri }}"
+    method: "{{ dis_method }}"
+    validate_certs: false
+    return_content: true
+  register: dis_result
+  failed_when: dis_expected_output not in dis_result.content
+  retries: "{{ dis_retry_count }}"
+  delay: "{{ dis_delay_count }}"
+  async: "{{ dis_async_count }}"
+  poll: "{{ dis_poll_count }}"
+  ignore_errors: yes
+  when: dis_web_port not in ['0', '', 'none']
+  tags: [dispatcher]
+
+- name: Restart httpd if Dispatcher check fails
+  service:
+    name: "{{ dis_web_service_name }}"
+    state: restarted
+  when: dis_result is defined and (dis_result.failed is defined and dis_result.failed)
+  tags: [dispatcher]
+
+- name: Log Dispatcher result
+  debug:
+    msg: >-
+      {% if dis_result is defined and dis_result.failed is defined and dis_result.failed -%}
+        ❌ HTTPS check failed on {{ inventory_hostname }} - Restarted {{ dis_web_service_name }}
+      {%- elif dis_result is defined -%}
+        ✅ HTTPS check passed on {{ inventory_hostname }} - No action taken
+      {%- else -%}
+        ⚠️ Dispatcher check skipped on {{ inventory_hostname }}
+      {%- endif %}
+  tags: [dispatcher]

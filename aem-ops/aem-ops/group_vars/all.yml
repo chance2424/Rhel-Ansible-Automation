@@ -1,0 +1,44 @@
+# ---- Central knobs (safe to edit) ----
+
+# DNF / patching
+dnf_name: "*"
+dnf_state: latest
+dnf_enablerepo: "*"
+# For public/sanitized use, leave blank. Add site-specific repos if needed.
+dnf_disablerepo: ""
+# Examples (uncomment & adapt for your environment):
+# dnf_disablerepo: "elastic-7-x,nginx-appstream,mysql-8.0-community,mysql-5.6-community"
+dnf_exclude: ""
+min_packages: 0
+max_packages: 0
+
+# Reboot behavior
+# Neutral flag for human-friendly usage:
+reboot_manually: false
+# Backward-compat alias (keeps existing roles working without code changes):
+c1b_reboot_manually: "{{ reboot_manually | default(false) }}"
+
+# Publisher validation
+pub_web_port: "4503"
+pub_request_uri: ""
+pub_method: "GET"
+pub_expected_output: "Sign In"
+pub_retry_count: 10
+pub_delay_count: 5
+pub_async_count: 45
+pub_poll_count: 15
+
+# Dispatcher validation
+dis_web_protocol: "https"
+dis_url_host: "localhost"
+# set to 'none' to skip dispatcher validation
+dis_web_port: "443"
+dis_request_uri: ""
+dis_method: "GET"
+dis_expected_output: "clientlib"
+dis_retry_count: 5
+dis_delay_count: 3
+dis_async_count: 45
+dis_poll_count: 15
+dis_web_service_name: "httpd"
+

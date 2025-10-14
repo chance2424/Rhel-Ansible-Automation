@@ -1,0 +1,12 @@
+---
+dis_web_protocol: "https"
+dis_url_host: "localhost"
+dis_web_port: "443"     # set to 'none' or '' or '0' to skip
+dis_request_uri: ""
+dis_method: "GET"
+dis_expected_output: "clientlib"
+dis_retry_count: 5
+dis_delay_count: 3
+dis_async_count: 45
+dis_poll_count: 15
+dis_web_service_name: "httpd"

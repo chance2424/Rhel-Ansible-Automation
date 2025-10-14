@@ -1,0 +1,52 @@
+---
+- name: Confirm AEM start ran
+  debug:
+    msg: "✅ AEM start role executed on {{ inventory_hostname }}"
+  tags: [start]
+
+# Author
+- name: Start AEM Author if host is author
+  become: true
+  shell: |
+    cd /opt/aem/author
+    nohup java -Xmx4096m -XX:MaxPermSize=256m -Djava.awt.headless=true \
+    -Dsling.run.modes=author,nosamplecontent,test,crx3,crx3tar \
+    -jar cq-quickstart-6.5.0.jar -p 4502 \
+    -Dsling.properties=conf/sling.properties > aem-start.log 2>&1 &
+  args:
+    chdir: /opt/aem/author
+  when: >
+    ('aut' in group_names) or
+    ('aut' in (inventory_hostname | lower))
+  ignore_errors: yes
+  tags: [start]
+
+# Publisher
+- name: Start AEM Publisher if host is publisher
+  become: true
+  shell: |
+    cd /opt/aem/publish
+    nohup java -Xmx4096m -XX:MaxPermSize=256m -Djava.awt.headless=true \
+    -Dsling.run.modes=publish,nosamplecontent,test,crx3,crx3tar \
+    -jar cq-quickstart-6.5.0.jar -p 4503 \
+    -Dsling.properties=conf/sling.properties > aem-start.log 2>&1 &
+  args:
+    chdir: /opt/aem/publish
+  when: >
+    ('pub' in group_names) or
+    ('pub' in (inventory_hostname | lower))
+  ignore_errors: yes
+  tags: [start]
+
+# Dispatcher (apache)
+- name: Ensure Apache is started (Dispatcher)
+  become: true
+  service:
+    name: httpd
+    state: started
+    enabled: true
+  when: >
+    ('dis' in group_names) or
+    ('dis' in (inventory_hostname | lower))
+  ignore_errors: yes
+  tags: [start]

@@ -1,0 +1,16 @@
+---
+- name: Kill AEM Java process
+  become: true
+  shell: pkill -f 'cq-quickstart'
+  ignore_errors: true
+  tags: [stop]
+
+- name: Confirm AEM process was killed
+  shell: pgrep -f 'cq-quickstart' || echo "No process running"
+  register: aem_kill_check
+  tags: [stop]
+
+- name: Display AEM stop result
+  debug:
+    msg: "✅ AEM Java stopped on {{ inventory_hostname }} - Status: {{ aem_kill_check.stdout }}"
+  tags: [stop]

@@ -1,0 +1,9 @@
+---
+dnf_name: "*"
+dnf_state: latest
+dnf_enablerepo: "*"
+dnf_disablerepo: ""
+dnf_exclude: ""
+min_packages: 0
+max_packages: 0
+reboot_manually: false
